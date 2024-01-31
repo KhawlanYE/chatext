@@ -11,12 +11,10 @@ from sklearn.naive_bayes import MultinomialNB
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predictions, preprocess_input
 from tensorflow.keras.preprocessing import image
 
-# Download NLTK resources
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-# Initialize chat history in session state
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
@@ -27,12 +25,10 @@ def load_data_from_file(file_path):
     data = [eval(line.strip()) for line in lines]
     return data
 
-text_file_path = "chattextdata.txt"  # Update with your actual file path
+text_file_path = "chattextdata.txt"
 
-# Load data from the text file
 documents = load_data_from_file(text_file_path)
 
-# Preprocessing steps
 stop_words = set(stopwords.words('english'))
 ps = PorterStemmer()
 wnl = WordNetLemmatizer()
@@ -43,10 +39,8 @@ def preprocess_text(text):
     words = [ps.stem(wnl.lemmatize(word, pos='v')) for word in words]  # Stemming and Lemmatization
     return ' '.join(words)
 
-# Applying preprocessing to documents
 preprocessed_documents = [(preprocess_text(text), label) for text, label in documents]
 
-# Load the pre-trained model for text classification
 vectorizer = TfidfVectorizer()
 X_train_tfidf = vectorizer.fit_transform([doc[0] for doc in preprocessed_documents])
 y_train = [doc[1] for doc in preprocessed_documents]
@@ -54,11 +48,9 @@ y_train = [doc[1] for doc in preprocessed_documents]
 dt_classifier = DecisionTreeClassifier()
 dt_classifier.fit(X_train_tfidf, y_train)
 
-# Building Naive Bayes model for text classification
 nb_classifier = MultinomialNB()
 nb_classifier.fit(X_train_tfidf, y_train)
 
-# Load the pre-trained model for image classification
 image_classifier = MobileNetV2(weights='imagenet', include_top=True, input_shape=(224, 224, 3))
 image_classifier.trainable = False  # Freeze the weights of the pre-trained model
 
@@ -66,7 +58,6 @@ def classify_text(text):
     preprocessed_text = preprocess_text(text)
     text_tfidf = vectorizer.transform([preprocessed_text])
 
-    # Use both Decision Tree and Naive Bayes models for text classification
     dt_prediction = dt_classifier.predict(text_tfidf)[0]
     nb_prediction = nb_classifier.predict(text_tfidf)[0]
 
@@ -102,7 +93,6 @@ def chatbot_interaction(user_input):
         initial_greeting = "Hello, there! I'm a chatbot. I will help classify text categories between 'technical support', 'billing', 'shipping'. If you want to exit, type Bye!"
         st.session_state.chat_history.append(("Chatbot", initial_greeting))
 
-        # Display initial greeting
         chat_history_container = st.empty()
         for role, message in st.session_state.chat_history:
             chat_history_container.write(f"{role}: {message}")
@@ -120,12 +110,9 @@ def chatbot_interaction(user_input):
     if greeting(user_input) is not None:
         return greeting(user_input)
 
-    # Use the chatbot's response function here
     dt_result, nb_result = classify_text(user_input)
     return response(user_input, dt_result, nb_result)
 
-
-# Streamlit app
 st.title("Text and Image Classification Chatbot")
 st.write(
     "This Streamlit app is designed to assist in classifying text categories and images. You can input text by copying and pasting online text or typing, and for images, you can drag and drop files. The chatbot utilizes NLTK for text classification and a pre-trained MobileNetV2 model for image classification."
