@@ -8,6 +8,7 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predictions, preprocess_input
 from tensorflow.keras.preprocessing import image
 
@@ -29,6 +30,8 @@ text_file_path = "chattextdata.txt"
 
 documents = load_data_from_file(text_file_path)
 
+train_documents, test_documents = train_test_split(documents, test_size=0.2, random_state=42)
+
 stop_words = set(stopwords.words('english'))
 ps = PorterStemmer()
 wnl = WordNetLemmatizer()
@@ -39,11 +42,15 @@ def preprocess_text(text):
     words = [ps.stem(wnl.lemmatize(word, pos='v')) for word in words]  # Stemming and Lemmatization
     return ' '.join(words)
 
-preprocessed_documents = [(preprocess_text(text), label) for text, label in documents]
+preprocessed_train_documents = [(preprocess_text(text), label) for text, label in train_documents]
+preprocessed_test_documents = [(preprocess_text(text), label) for text, label in test_documents]
 
 vectorizer = TfidfVectorizer()
-X_train_tfidf = vectorizer.fit_transform([doc[0] for doc in preprocessed_documents])
-y_train = [doc[1] for doc in preprocessed_documents]
+X_train_tfidf = vectorizer.fit_transform([doc[0] for doc in preprocessed_train_documents])
+y_train = [doc[1] for doc in preprocessed_train_documents]
+
+X_test_tfidf = vectorizer.transform([doc[0] for doc in preprocessed_test_documents])
+y_test = [doc[1] for doc in preprocessed_test_documents]
 
 dt_classifier = DecisionTreeClassifier()
 dt_classifier.fit(X_train_tfidf, y_train)
